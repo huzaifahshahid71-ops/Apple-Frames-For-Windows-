@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# Downloaded / third-party frame asset packs
+Frames.zip
+Frames.download.zip
+Frames/
+
+# Generated outputs
+*_framed.*
+output/
+outputs/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local logs/temp
+*.log
+*.tmp
