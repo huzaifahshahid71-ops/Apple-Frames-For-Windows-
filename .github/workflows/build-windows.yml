@@ -26,6 +26,10 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install --upgrade pillow pillow-heif customtkinter pyinstaller
 
+      - name: Generate application icons
+        shell: pwsh
+        run: python generate_icon.py
+
       - name: Download frame assets
         shell: pwsh
         run: |
