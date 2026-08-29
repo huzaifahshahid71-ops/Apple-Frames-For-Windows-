@@ -26,10 +26,16 @@ if errorlevel 1 (
 for /f "tokens=2" %%V in ('py --version 2^>^&1') do echo [OK] Python %%V
 
 echo.
-echo [1/5] Installing / updating build dependencies...
+echo [1/6] Installing / updating build dependencies...
 py -m pip install --upgrade pip
 if errorlevel 1 goto :fail
 py -m pip install --upgrade pillow pillow-heif customtkinter pyinstaller
+if errorlevel 1 goto :fail
+
+echo.
+echo [2/6] Generating the Apple Frames Studio application icons...
+if not exist "generate_icon.py" goto :missing
+py generate_icon.py
 if errorlevel 1 goto :fail
 
 if /I "%~1"=="refresh" goto :download_frames
@@ -37,7 +43,7 @@ if exist "Frames.zip" goto :frames_ready
 
 :download_frames
 echo.
-echo [2/5] Downloading the current Apple Frames 4 asset pack...
+echo [3/6] Downloading the current Apple Frames 4 asset pack...
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "$ErrorActionPreference='Stop'; $ProgressPreference='SilentlyContinue'; Invoke-WebRequest -UseBasicParsing -Uri '%ASSET_URL%' -OutFile 'Frames.download.zip'; if ((Get-Item 'Frames.download.zip').Length -lt 1000000) { throw 'Downloaded frame archive is unexpectedly small.' }; Move-Item -Force 'Frames.download.zip' 'Frames.zip'"
 if errorlevel 1 (
@@ -57,13 +63,13 @@ if not exist "version_info.txt" goto :missing
 for %%F in ("Frames.zip") do echo [OK] Frame archive ready: %%~zF bytes
 
 echo.
-echo [3/5] Cleaning previous build...
+echo [4/6] Cleaning previous build...
 if exist "build" rmdir /s /q "build"
 if exist "dist" rmdir /s /q "dist"
 if exist "%APP%.spec" del /q "%APP%.spec"
 
 echo.
-echo [4/5] Building one-file Windows application...
+echo [5/6] Building one-file Windows application...
 echo       The custom icon is embedded by PyInstaller during the build.
 echo       The finished EXE is NEVER modified afterward.
 py -m PyInstaller ^
@@ -89,7 +95,7 @@ if not exist "%OUT_EXE%" (
 )
 
 echo.
-echo [5/5] Verifying the finished one-file executable...
+echo [6/6] Verifying the finished one-file executable...
 for %%F in ("%OUT_EXE%") do set "EXE_SIZE=%%~zF"
 echo [INFO] Finished EXE size: !EXE_SIZE! bytes
 if !EXE_SIZE! LSS %MIN_EXE_SIZE% (
@@ -125,8 +131,8 @@ echo.
 echo IMPORTANT:
 echo   No post-build resource patcher is used in v1.5.
 echo   Modifying a PyInstaller one-file EXE after linking can destroy
- echo   its appended PKG archive. The icon is now embedded safely at
- echo   build time from the multi-resolution ICO.
+ echo   its appended PKG archive. The icon is embedded safely at
+ echo   build time from the generated multi-resolution ICO.
 echo ============================================================
 start "" "%CD%\dist"
 pause
@@ -134,7 +140,7 @@ exit /b 0
 
 :missing
 echo [ERROR] One or more required project files are missing.
-echo Make sure you extracted the full project ZIP before running this BAT.
+echo Make sure you downloaded or cloned the full repository before running this BAT.
 pause
 exit /b 1
 
