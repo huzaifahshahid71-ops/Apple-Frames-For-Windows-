@@ -1,0 +1,72 @@
+name: Build Windows EXE
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade pillow pillow-heif customtkinter pyinstaller
+
+      - name: Download frame assets
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $ProgressPreference = "SilentlyContinue"
+          Invoke-WebRequest -UseBasicParsing -Uri "https://cdn.macstories.net/AppleFrames401.zip" -OutFile "Frames.zip"
+          if ((Get-Item "Frames.zip").Length -lt 1000000) {
+            throw "Downloaded frame archive is unexpectedly small."
+          }
+
+      - name: Build Apple Frames Studio
+        shell: pwsh
+        run: |
+          python -m PyInstaller `
+            --noconfirm `
+            --clean `
+            --onefile `
+            --windowed `
+            --name "AppleFramesStudio" `
+            --icon "$PWD/apple_frames_studio.ico" `
+            --version-file "$PWD/version_info.txt" `
+            --collect-all customtkinter `
+            --collect-all pillow_heif `
+            --hidden-import PIL._tkinter_finder `
+            --add-data "Frames.zip;." `
+            --add-data "apple_frames_studio.ico;." `
+            --add-data "apple_frames_studio_icon.png;." `
+            apple_frames_studio.py
+
+      - name: Verify one-file archive
+        shell: pwsh
+        run: |
+          $exe = "dist/AppleFramesStudio.exe"
+          if (-not (Test-Path $exe)) { throw "Executable was not created." }
+          if ((Get-Item $exe).Length -lt 15000000) { throw "Executable is unexpectedly small." }
+          python -m PyInstaller.utils.cliutils.archive_viewer -l $exe | Out-Null
+
+      - name: Upload Windows executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppleFramesStudio-Windows
+          path: dist/AppleFramesStudio.exe
+          if-no-files-found: error
+          compression-level: 0
