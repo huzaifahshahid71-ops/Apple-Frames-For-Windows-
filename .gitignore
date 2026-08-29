@@ -16,6 +16,10 @@ Frames.zip
 Frames.download.zip
 Frames/
 
+# Generated application icon files
+apple_frames_studio.ico
+apple_frames_studio_icon.png
+
 # Generated outputs
 *_framed.*
 output/
